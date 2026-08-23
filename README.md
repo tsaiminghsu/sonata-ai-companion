@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sonata — AI Companion Platform
 
-## Getting Started
+An AI companion chat product (Character.AI/Replika-style): create a companion, chat with it, build a relationship, earn and spend a "Diamond" currency, and send gifts. Next.js + TypeScript + Tailwind on AWS Amplify Gen 2 (Cognito, Amplify Data/DynamoDB, Lambda, S3, EventBridge Scheduler).
 
-First, run the development server:
+## Screenshots
+
+| | |
+|---|---|
+| **Login** | **Home** |
+| ![Login](docs/screenshots/01-login.png) | ![Home](docs/screenshots/02-home.png) |
+| **Create a companion** (preset avatars, 12 personality traits, speech style) | **Companion detail** (relationship level/XP, memory) |
+| ![Create companion](docs/screenshots/03-create-companion.png) | ![Companion detail](docs/screenshots/04-companion-detail.png) |
+| **Chat** (AI reply, gift narration + reaction) | **Diamond shop** (wallet, self-set spend limit, transaction history) |
+| ![Chat](docs/screenshots/05-chat.png) | ![Diamond shop](docs/screenshots/06-diamond-shop.png) |
+| **Daily check-in** | **Assets gallery** |
+| ![Check-in](docs/screenshots/07-checkin.png) | ![Assets](docs/screenshots/08-assets.png) |
+
+*(Screenshots taken in [demo mode](#demo-mode-no-aws-needed) — the banner at the top of each page is only shown there.)*
+
+## Features
+
+- **Auth** — Cognito email/password, protected routes.
+- **Companions** — create/edit/delete, preset avatar gallery, 12 personality traits, free-text speech style that feeds the AI's system prompt.
+- **Chat** — AI replies behind a swappable `AIProvider` interface, suggested replies, typing indicator, retry-on-error, persists across reload.
+- **Memory** — manual notes fed into the chat system prompt.
+- **Relationship** — server-side XP per message, level progress bar.
+- **Gifting** — 6-item catalog, atomic diamond spend, narration + AI reaction message, bigger XP bump than a normal message.
+- **Wallet** — signup grant, daily check-in (+20), self-set daily spend limit, transaction ledger.
+- **AI image generation backend** — full mock pipeline (QUEUED→PROCESSING→COMPLETED via a real async webhook, not a shortcut) kept in place for a future creator/admin pipeline; not exposed to end users (see [`MVP_IMPLEMENTATION_REPORT.md`](MVP_IMPLEMENTATION_REPORT.md) for why).
+
+Full build notes, architecture decisions, and known limitations: [`MVP_IMPLEMENTATION_REPORT.md`](MVP_IMPLEMENTATION_REPORT.md).
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Demo mode (no AWS needed)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The app can run entirely without a deployed backend, using a localStorage-backed mock of Cognito + Amplify Data:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+echo "NEXT_PUBLIC_DEMO_MODE=true" > .env.local
+npm run dev
+```
 
-## Learn More
+Open `/login` and click **"使用測試帳號登入"** (or type any email/password). See `lib/demo/config.ts` for exactly what this bypasses. Remove `.env.local` to go back to the real backend.
 
-To learn more about Next.js, take a look at the following resources:
+### Real AWS backend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx ampx sandbox          # deploys Cognito/AppSync/Lambda/S3, writes amplify_outputs.json
+npm run seed:pricing       # seeds the one GenerationPricing row
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Testing
 
-## Deploy on Vercel
+```bash
+npm run test:e2e
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Playwright specs cover the full flow: auth, companion CRUD, chat + relationship XP, gifting + spend limit, daily check-in, and generation-webhook idempotency (the last one needs a real deployed backend and self-skips otherwise).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · AWS Amplify Gen 2 · Cognito · Amplify Data (DynamoDB) · Lambda · S3 · EventBridge Scheduler · Playwright
